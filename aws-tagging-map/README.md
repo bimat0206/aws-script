@@ -1,76 +1,101 @@
-# AWS Service Tagging Script
+# AWS Interactive Tagging Tool
 
-This script checks the availability of various AWS services in your AWS account and runs corresponding tagging scripts if the services are available.
+This project provides an interactive Python script to tag AWS resources across multiple services in bulk. It is designed to be safer and more user-friendly, offering resource previews, confirmation steps, and detailed logging.
+
+## Features
+
+- **Interactive Selection**: Choose specific services to scan or select all available services.
+- **Resource Preview**: View a list of resources (ID, Name, ARN) that will be tagged *before* any changes are made.
+- **Safety**: Detailed summary of resources and explicit confirmation prompt (`y/n`) prevents accidental tagging.
+- **Logging**: detailed logs of every execution are saved in the `log/` directory, including resources found, tags applied, and any errors.
+- **Account Verification**: Displays the Target AWS Account ID and Account Alias (name) to ensure you are operating in the correct environment.
+- **Consistency**: Uses a central `tags.json` file to define tags, ensuring consistency across all resources.
 
 ## Prerequisites
 
-- AWS CLI must be installed and configured with appropriate permissions.
-- set the AWS environment variables:
-export AWS_ACCESS_KEY_ID=
-export AWS_SECRET_ACCESS_KEY=
-export AWS_SESSION_TOKEN=
-- `jq` must be installed for JSON processing.
-- Ensure individual service tagging scripts (e.g., `ecr.sh`, `ec2.sh`, etc.) are available in the same directory as this script.
+- **Python 3**: The script requires Python 3.
+- **Boto3**: The AWS SDK for Python.
+  ```bash
+  pip install boto3
+  ```
+- **AWS Credentials**: The script uses your environment's default AWS credentials (e.g., `~/.aws/credentials`, `AWS_PROFILE`, or environment variables). Ensure you have permissions to `describe` and `tag` resources for the services you are managing.
 
-## Usage
+## Configuration
 
-Run the script:
-chmod +x master.sh
-./master.sh
+Define the tags you want to apply in the `tags.json` file in the root directory.
 
-## Script Details
-
-The script performs the following tasks:
-
-1. Retrieves the AWS Account ID using the AWS CLI.
-2. Checks the availability of each specified AWS service in the account.
-3. If a service is available, it runs the corresponding tagging script for that service.
-4. Displays progress and handles cases where services or scripts are not available gracefully.
-
-## Services Checked
-
-The script checks for the following AWS services and runs their corresponding scripts if available:
-
-- Amazon Elastic Container Registry (ECR)
-- AWS Secrets Manager
-- Amazon EC2 Instances
-- Amazon EBS Volumes
-- Amazon RDS Instances
-- Amazon SNS Topics
-- Amazon SQS Queues
-- Amazon S3 Buckets
-- AWS Lambda Functions
-- Amazon Elastic Load Balancers (ELB)
-- Amazon EBS Snapshots
-- Amazon ECS Clusters
-- AWS Direct Connect
-- Amazon EKS Clusters
-- Amazon FSx File Systems
-- Amazon API Gateway
-- AWS Network Firewall
-- Amazon OpenSearch (Elasticsearch Service)
-- Amazon Route 53 Hosted Zones
-- AWS Backup Vaults
-- Amazon CloudWatch Log Groups
-- Amazon EFS File Systems
-- Amazon ElastiCache Clusters
-
-## Script Execution
-
-For each service, the script:
-
-1. Checks if the service is available in the AWS account using the corresponding AWS CLI command.
-2. If the service is available and a corresponding script file (e.g., `ecr.sh`) is found, it makes the script executable and runs it.
-3. If the service is not available or the script file is not found, it skips to the next service.
-
-## Example `tags.json`
-
-Ensure each individual service tagging script uses a `tags.json` file for the tags to be applied. An example `tags.json` file:
-
+**Example `tags.json`:**
 ```json
 {
   "Tags": {
     "Environment": "Production",
-    "Owner": "YourName"
+    "Project": "Migration",
+    "ManagedBy": "AWS-Tagging-Script"
   }
 }
+```
+
+## Usage
+
+Run the script from the terminal:
+
+```bash
+python3 aws_tagging_interactive.py
+```
+
+### Execution Flow:
+1. **Startup**: script initializes, verifies credentials, and loads tags.
+2. **Operation Mode**: You are prompted to select:
+   - `1`: Apply Tags (Add/Update)
+   - `2`: Remove Tags
+3. **Service Selection**: You are prompted to select services.
+   - Enter numbers (e.g., `1, 5, 10`) for specific services.
+   - Enter `a` to scan ALL supported services.
+4. **Scanning**: The script scans selected services for resources.
+5. **Preview**: A preview of found resources is displayed.
+6. **Confirmation**: You must type `y` to proceed.
+7. **Completion**: Operation is executed, and a log file is generated.
+
+## Supported Services
+
+The script currently supports tagging for the following services:
+
+- API Gateway (REST & HTTP)
+- AWS Backup (Vaults)
+- CloudWatch Logs (Log Groups)
+- Direct Connect
+- DynamoDB Tables
+- EBS (Volumes & Snapshots)
+- EC2 Instances
+- ECR Repositories
+- ECS Clusters
+- EFS File Systems
+- EKS Clusters
+- ElastiCache Clusters
+- Elastic Load Balancing (Classic & Application/Network)
+- FSx File Systems
+- Lambda Functions
+- Network Firewall
+- OpenSearch Domains
+- RDS Instances
+- Route 53 Hosted Zones
+- S3 Buckets
+- Secrets Manager
+- SNS Topics
+- SQS Queues
+
+## Directory Structure
+
+```
+├── aws_tagging_interactive.py  # Main Python script
+├── tags.json                   # Configuration file for tags
+├── log/                        # Directory for execution logs
+```
+
+## Logs
+
+Logs are stored in the `log/` directory with the naming convention `aws_tagging_YYYY-MM-DD_HH-MM-SS.log`. These logs contain:
+- Execution params (Account, Region)
+- Selected services
+- List of resources identified
+- Success/Failure status of tagging operations
